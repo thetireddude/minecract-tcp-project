@@ -100,4 +100,82 @@ int main() {
         cout << "Connected to upstream on port " << upstream_port << endl;
     }
 
+    // receive message
+    char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));  // clean buffer
+
+    while(true) {   // infinite loop; keep receiving bytes until client disconnects
+        int bytesRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+        if (bytesRecv == -1) {
+            cerr << "Couldnt receive bytes from client" << endl;
+            close(listening);
+            close(clientSocket);
+            close(upstreamSocket);
+            return -7;
+        }
+
+        if (bytesRecv == 0) {
+            cerr << "Client disconnected" << endl;
+            close(listening);
+            close(clientSocket);
+            close(upstreamSocket);
+            return -8;
+        }
+
+        // display message
+        cout << "Received: " << string(buffer, 0, bytesRecv);
+
+        // forward/send bytes to upstream (server)
+        int bytesSent = send(upstreamSocket, buffer, bytesRecv, 0);
+
+        if (bytesSent == -1) {
+            cerr << "Could not forward bytes to upstream" << endl;
+            close(listening);
+            close(clientSocket);
+            close(upstreamSocket);
+            return -9;
+        }
+        else {
+            cout << "Forwarded " << bytesSent << " bytes upstream" << endl;
+        }
+
+        // wait for server response, echo response
+        int upstreamBytesRecv = recv(upstreamSocket, buffer, sizeof(buffer), 0);
+
+        if (upstreamBytesRecv == -1) {
+            cerr << "Couldnt receive upstream server response" << endl;
+            close(listening);
+            close(clientSocket);
+            close(upstreamSocket);
+            return -10;
+        }
+
+        if (upstreamBytesRecv == 0) {
+            cerr << "Upstream server disconnected" << endl;
+            close(listening);
+            close(clientSocket);
+            close(upstreamSocket);
+            return -11;
+        }
+
+        // display response
+        cout << "UPSTREAM SERVER: " << string(buffer, 0, upstreamBytesRecv+1);
+
+        // echo server response back to client
+        int bytesSentToClient = send(clientSocket, buffer, upstreamBytesRecv, 0);
+
+        if (bytesSentToClient == -1) {
+            cerr << "Couldnt echo response back to client" << endl;
+            close(listening);
+            close(clientSocket);
+            close(upstreamSocket);
+            return -12;
+        }
+        else {
+            cout << "Echoed " << bytesSentToClient << " bytes back to client" << endl;
+        }
+        
+    }
+
 }
