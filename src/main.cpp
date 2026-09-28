@@ -60,7 +60,7 @@ int main() {
  
     int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0); // getting the name of the host
 
-    if (result) {
+    if (result == 0) {
         cout <<  host << " connected on " << svc << endl;
     }
     else {
