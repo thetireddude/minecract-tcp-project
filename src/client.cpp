@@ -36,6 +36,9 @@ int main() {
         cerr << "Couldnt connect socket to server" << endl;
         return 2;
     }
+    else {
+        cout << "Socket connected to server" << endl;
+    }
 
     // send user input to server, echo response 
     char buff[4096];
@@ -56,6 +59,9 @@ int main() {
         if (sendRes == -1) {
             cerr << "Couldnt send to server" << endl;
             continue;
+        }
+        else {
+            cout << sendRes << " bytes sent to server" << endl;
         }
 
         // wait for response

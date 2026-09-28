@@ -32,8 +32,11 @@ int main() {
 
     // mark socket for listening
     if (listen(listening, SOMAXCONN) == -1) {
-        cerr << "Cant listen";
+        cerr << "Couldnt listen for connections...";
         return -3;
+    }
+    else {
+        cout << "Listening for connections..." << endl;
     }
 
     // accepting a call; creating a client socket
@@ -58,12 +61,12 @@ int main() {
     int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0); // getting the name of the host
 
     if (result) {
-        cout <<  host << "connected on " << svc << endl;
+        cout <<  host << " connected on " << svc << endl;
     }
     else {
         // do it manually if it fails
         inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
-        cout << host << "connected on " << ntohs(client.sin_port) << endl;
+        cout << host << " connected on " << ntohs(client.sin_port) << endl;
     }
 
     // display message while receiving, echo message
