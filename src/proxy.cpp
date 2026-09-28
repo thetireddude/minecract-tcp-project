@@ -8,6 +8,28 @@
 
 using namespace std;
 
+// keeps calling send() until all bytes are sent
+bool sendAll(int destinationSocket, const char* data, int length) { 
+    int totalSent = 0;
+
+    while (totalSent < length) {
+        int bytesSent = send(
+            destinationSocket,
+            data + totalSent,   // starting position in buffer
+            length - totalSent, // number of bytes left to send
+            0
+        );
+
+        if (bytesSent <= 0) {
+            return false;
+        }
+
+        totalSent += bytesSent;
+    }
+
+    return true;
+}
+
 int main() {
     cout << "Proxy starting..." << endl;
 
@@ -127,9 +149,7 @@ int main() {
         cout << "Received: " << string(buffer, 0, bytesRecv) << endl;
 
         // forward/send bytes to upstream (server)
-        int bytesSent = send(upstreamSocket, buffer, bytesRecv, 0);
-
-        if (bytesSent == -1) {
+        if (!sendAll(upstreamSocket, buffer, bytesRecv)) {
             cerr << "Could not forward bytes to upstream" << endl;
             close(listening);
             close(clientSocket);
@@ -137,7 +157,7 @@ int main() {
             return -9;
         }
         else {
-            cout << "Forwarded " << bytesSent << " bytes upstream" << endl;
+            cout << "Forwarded " << bytesRecv << " bytes upstream" << endl;
         }
 
         // wait for server response, echo response
