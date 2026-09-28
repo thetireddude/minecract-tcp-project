@@ -72,6 +72,63 @@ void forwardLoop(int sourceSocket, int destinationSocket, const char* direction)
     }
 }
 
+// creates a relay session for a client; listener remains open for further client connections
+void relaySession(int clientSocket, int upstreamSocket) {
+    // call forwardLoop in separate threads for both directions
+    thread clientToUpstream(forwardLoop,
+        clientSocket,
+        upstreamSocket,
+        "client to upstream"
+    );
+
+    thread upstreamToClient(forwardLoop,
+        upstreamSocket,
+        clientSocket,
+        "upstream to client"
+    );
+
+    // wait for threads to finish
+    clientToUpstream.join();
+    upstreamToClient.join();
+
+    // cleanup
+    close(clientSocket);
+    close(upstreamSocket);
+}
+
+// handles per-client upstream set up and connection
+void handleClientSession(int clientSocket, int upstream_port, const char* upstream_ip) {
+    // create upstream server socket (minecraft server)
+    int upstreamSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (upstreamSocket == -1) {
+        cerr << "Couldnt create upstream socket" << endl;
+        close(clientSocket);
+        return;
+    }
+
+    // hint structure for destination (server) that we're connecting to 
+    sockaddr_in upstream;
+    upstream.sin_family = AF_INET;
+    upstream.sin_port = htons(upstream_port);   // configured server.jar destination port
+    inet_pton(AF_INET, upstream_ip, &upstream.sin_addr);    // Use 127.0.0.1 because connect() needs one specific destination server. 0.0.0.0 is a wildcard
+
+    // connect to upstream
+    if (connect(upstreamSocket, (sockaddr*)&upstream, sizeof(upstream)) == -1) {
+        cerr << "Couldnt connect to upstream server" << endl;
+        close(clientSocket);
+        close(upstreamSocket);
+        return;
+    }
+    else {
+        cout << "Connected to upstream on port " << upstream_port << endl;
+    }
+
+    // create a relay session for the client
+    // still only accepts one client connection since there is no loop
+    relaySession(clientSocket, upstreamSocket);
+}
+
 int main() {
     cout << "Proxy starting..." << endl;
 
@@ -135,54 +192,10 @@ int main() {
         cout << host << " connected on " << ntohs(client.sin_port) << endl;
     }
 
-    // create upstream server socket (minecraft server)
-    int upstreamSocket = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (upstreamSocket == -1) {
-        cerr << "Couldnt create upstream socket" << endl;
-        close(listening);
-        close(clientSocket);
-        return -5;
-    }
-
-    // hint structure for destination (server) that we're connecting to 
-    sockaddr_in upstream;
-    upstream.sin_family = AF_INET;
-    upstream.sin_port = htons(upstreamPort);   // server port runs on 54000, see main.cpp
-    inet_pton(AF_INET, upstreamIp, &upstream.sin_addr);    // Use 127.0.0.1 because connect() needs one specific destination server. 0.0.0.0 is a wildcard
-
-    // connect to upstream
-    if (connect(upstreamSocket, (sockaddr*)&upstream, sizeof(upstream)) == -1) {
-        cerr << "Couldnt connect to upstream server" << endl;
-        close(listening);
-        close(clientSocket);
-        close(upstreamSocket);
-        return -6;
-    }
-    else {
-        cout << "Connected to upstream on port " << upstreamPort << endl;
-    }
-
-    // call forwardLoop in separate threads for both directions
-    thread clientToUpstream(forwardLoop,
-        clientSocket,
-        upstreamSocket,
-        "client to upstream"
-    );
-
-    thread upstreamToClient(forwardLoop,
-        upstreamSocket,
-        clientSocket,
-        "upstream to client"
-    );
-
-    // wait for threads to finish
-    clientToUpstream.join();
-    upstreamToClient.join();
+    // set-up and handle upstream socket connection
+    handleClientSession(clientSocket, upstreamPort, upstreamIp);
 
     // cleanup
-    close(clientSocket);
-    close(upstreamSocket);
     close(listening);
 
 }
