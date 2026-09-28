@@ -9,6 +9,17 @@
 
 using namespace std;
 
+// Minecraft client connects to this proxy on localhost:25566.
+// The proxy then opens its own connection to server.jar on localhost:25565.
+//
+// Minecraft client → proxy :25566 → server.jar :25565
+//
+// The proxy accepts the client as a server, connects to server.jar as a
+// client, and relays the TCP byte stream unchanged in both directions.
+int listenerPort = 25566;
+int upstreamPort = 25565;
+char* upstreamIp = "127.0.0.1";
+
 // keeps calling send() until all bytes are sent
 bool sendAll(int destinationSocket, const char* data, int length) { 
     int totalSent = 0;
@@ -75,7 +86,7 @@ int main() {
     // bind listener socket to an IP/port
     sockaddr_in hint;
     hint.sin_family = AF_INET;
-    hint.sin_port = htons(25566);
+    hint.sin_port = htons(listenerPort);
     inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);
 
     if (bind(listening, (sockaddr*)&hint, sizeof(hint)) == -1) {
@@ -137,9 +148,8 @@ int main() {
     // hint structure for destination (server) that we're connecting to 
     sockaddr_in upstream;
     upstream.sin_family = AF_INET;
-    int upstream_port = 25565;
-    upstream.sin_port = htons(upstream_port);   // server port runs on 54000, see main.cpp
-    inet_pton(AF_INET, "127.0.0.1", &upstream.sin_addr);    // Use 127.0.0.1 because connect() needs one specific destination server. 0.0.0.0 is a wildcard
+    upstream.sin_port = htons(upstreamPort);   // server port runs on 54000, see main.cpp
+    inet_pton(AF_INET, upstreamIp, &upstream.sin_addr);    // Use 127.0.0.1 because connect() needs one specific destination server. 0.0.0.0 is a wildcard
 
     // connect to upstream
     if (connect(upstreamSocket, (sockaddr*)&upstream, sizeof(upstream)) == -1) {
@@ -150,7 +160,7 @@ int main() {
         return -6;
     }
     else {
-        cout << "Connected to upstream on port " << upstream_port << endl;
+        cout << "Connected to upstream on port " << upstreamPort << endl;
     }
 
     // call forwardLoop in separate threads for both directions
