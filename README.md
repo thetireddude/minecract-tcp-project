@@ -262,18 +262,17 @@ Session ended. Active sessions: 0
 
 ## Screenshots
 
-Save screenshots under `docs/screenshots/`, then add them here:
-
-```markdown
+### Minecraft traffic relayed in both directions through `localhost:25566`
 ![Minecraft traffic through proxy](docs/screenshots/minecraft-proxy-traffic.png)
 
-![Concurrent proxy sessions](docs/screenshots/concurrent-sessions.png)
-```
+### Proxy listening for concurrent connections
+![Listening for concurrent connections](docs/screenshots/concurrent-sessions1.png)
 
-Suggested captions:
+### Concurrent sessions with active session counter
+![Two concurrent sessions with active session counter](docs/screenshots/concurrent-sessions2.png)
 
-- Minecraft traffic relayed in both directions through `localhost:25566`.
-- Two active proxy sessions followed by clean disconnects.
+### `server.jar` logs
+![Minecraft server.jar logs](docs/screenshots/concurrent-sessions.png)
 
 ## Scope and next steps
 
