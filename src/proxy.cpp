@@ -75,7 +75,7 @@ int main() {
     // bind listener socket to an IP/port
     sockaddr_in hint;
     hint.sin_family = AF_INET;
-    hint.sin_port = htons(54001);
+    hint.sin_port = htons(25566);
     inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);
 
     if (bind(listening, (sockaddr*)&hint, sizeof(hint)) == -1) {
@@ -137,7 +137,7 @@ int main() {
     // hint structure for destination (server) that we're connecting to 
     sockaddr_in upstream;
     upstream.sin_family = AF_INET;
-    int upstream_port = 54000;
+    int upstream_port = 25565;
     upstream.sin_port = htons(upstream_port);   // server port runs on 54000, see main.cpp
     inet_pton(AF_INET, "127.0.0.1", &upstream.sin_addr);    // Use 127.0.0.1 because connect() needs one specific destination server. 0.0.0.0 is a wildcard
 
