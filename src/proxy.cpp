@@ -5,6 +5,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <thread>
 
 using namespace std;
 
@@ -28,6 +29,36 @@ bool sendAll(int destinationSocket, const char* data, int length) {
     }
 
     return true;
+}
+
+// forwards bytes to destinations in a specified direction
+void forwardLoop(int sourceSocket, int destinationSocket, const char* direction) {
+    char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));  // clean buffer
+
+    while (true) {
+        int bytesRecv = recv(sourceSocket, buffer, sizeof(buffer), 0);
+
+        if (bytesRecv == 0) {
+            cerr << direction << ": source disconnected" << endl;
+            shutdown(destinationSocket, SHUT_WR);   // close write, not a full close(destinationSocket)
+            break;
+        }
+
+        if (bytesRecv == -1) {
+            cerr << direction << ": receive failed" << endl;
+            shutdown(destinationSocket, SHUT_WR);   // close write, not a full close(destinationSocket)
+            break;
+        }
+
+        if (!sendAll(destinationSocket, buffer, bytesRecv)) {
+            cerr << direction << ": forwarding failed" << endl;
+            shutdown(destinationSocket, SHUT_WR);   // close write, not a full close(destinationSocket)
+            break;
+        }
+
+        cout << direction << ": forwarded "<< bytesRecv << " bytes" << endl;
+    }
 }
 
 int main() {
@@ -122,78 +153,26 @@ int main() {
         cout << "Connected to upstream on port " << upstream_port << endl;
     }
 
-    // receive message
-    char buffer[4096];
-    memset(buffer, 0, sizeof(buffer));  // clean buffer
+    // call forwardLoop in separate threads for both directions
+    thread clientToUpstream(forwardLoop,
+        clientSocket,
+        upstreamSocket,
+        "client to upstream"
+    );
 
-    while(true) {   // infinite loop; keep receiving bytes until client disconnects
-        int bytesRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+    thread upstreamToClient(forwardLoop,
+        upstreamSocket,
+        clientSocket,
+        "upstream to client"
+    );
 
-        if (bytesRecv == -1) {
-            cerr << "Couldnt receive bytes from client" << endl;
-            close(listening);
-            close(clientSocket);
-            close(upstreamSocket);
-            return -7;
-        }
+    // wait for threads to finish
+    clientToUpstream.join();
+    upstreamToClient.join();
 
-        if (bytesRecv == 0) {
-            cerr << "Client disconnected" << endl;
-            close(listening);
-            close(clientSocket);
-            close(upstreamSocket);
-            return -8;
-        }
-
-        // display message
-        cout << "Received: " << string(buffer, 0, bytesRecv) << endl;
-
-        // forward/send bytes to upstream (server)
-        if (!sendAll(upstreamSocket, buffer, bytesRecv)) {
-            cerr << "Could not forward bytes to upstream" << endl;
-            close(listening);
-            close(clientSocket);
-            close(upstreamSocket);
-            return -9;
-        }
-        else {
-            cout << "Forwarded " << bytesRecv << " bytes upstream" << endl;
-        }
-
-        // wait for server response, echo response
-        int upstreamBytesRecv = recv(upstreamSocket, buffer, sizeof(buffer), 0);
-
-        if (upstreamBytesRecv == -1) {
-            cerr << "Couldnt receive upstream server response" << endl;
-            close(listening);
-            close(clientSocket);
-            close(upstreamSocket);
-            return -10;
-        }
-
-        if (upstreamBytesRecv == 0) {
-            cerr << "Upstream server disconnected" << endl;
-            close(listening);
-            close(clientSocket);
-            close(upstreamSocket);
-            return -11;
-        }
-
-        // display response
-        cout << "UPSTREAM SERVER: " << string(buffer, 0, upstreamBytesRecv) << endl;
-
-        // echo server response back to client
-        if (!sendAll(clientSocket, buffer, upstreamBytesRecv)) {
-            cerr << "Couldnt echo response back to client" << endl;
-            close(listening);
-            close(clientSocket);
-            close(upstreamSocket);
-            return -12;
-        }
-        else {
-            cout << "Echoed " << upstreamBytesRecv << " bytes back to client" << endl;
-        }
-        
-    }
+    // cleanup
+    close(clientSocket);
+    close(upstreamSocket);
+    close(listening);
 
 }
