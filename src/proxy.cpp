@@ -18,7 +18,7 @@ using namespace std;
 // client, and relays the TCP byte stream unchanged in both directions.
 int listenerPort = 25566;
 int upstreamPort = 25565;
-char* upstreamIp = "127.0.0.1";
+const char* upstreamIp = "127.0.0.1";
 
 // keeps calling send() until all bytes are sent
 bool sendAll(int destinationSocket, const char* data, int length) { 
