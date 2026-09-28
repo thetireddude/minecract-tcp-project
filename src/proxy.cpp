@@ -180,7 +180,7 @@ int main() {
         }
 
         // display response
-        cout << "UPSTREAM SERVER: " << string(buffer, 0, upstreamBytesRecv+1) << endl;
+        cout << "UPSTREAM SERVER: " << string(buffer, 0, upstreamBytesRecv) << endl;
 
         // echo server response back to client
         int bytesSentToClient = send(clientSocket, buffer, upstreamBytesRecv, 0);

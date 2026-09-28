@@ -21,7 +21,7 @@ int main() {
     }
 
     // hint structure for SERVER that we're connecting to
-    int port = 54000;
+    int port = 54001;
     string ipAddress = "127.0.0.1";
 
     sockaddr_in hint;   // convention to name as hint
@@ -54,7 +54,7 @@ int main() {
         }
 
         // send to server
-        int sendRes = send(sock, userInput.c_str(), userInput.size()+1, 0);
+        int sendRes = send(sock, userInput.c_str(), userInput.size(), 0);
 
         if (sendRes == -1) {
             cerr << "Couldnt send to server" << endl;

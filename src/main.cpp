@@ -94,7 +94,7 @@ int main() {
         cout << "Received: " << string(buff, 0, bytesRecv) << endl;
 
         // resend message
-        send(clientSocket, buff, bytesRecv+1, 0); // will be used to relay bytes over to another server later
+        send(clientSocket, buff, bytesRecv, 0); // will be used to relay bytes over to another server later
     }
 
     // close socket
