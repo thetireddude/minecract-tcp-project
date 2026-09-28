@@ -64,18 +64,27 @@ upstreamSocket -> clientSocket
 
 TCP is a byte stream, so one `recv()` result is not necessarily one complete Minecraft packet.
 
+Replace the project-structure block with this:
+
 ## Project structure
 
 ```text
 .
 ├── README.md
 ├── docs/
-│   └── Minecraft_TCP_Proxy_Project_Guide.md
+│   ├── Minecraft_TCP_Proxy_Project_Guide.md
+│   └── screenshots/
+│       ├── minecraft-proxy-traffic.png 
+        ├── concurrent-sessions.png
+        ├── concurrent-sessions1.png     
+│       └── concurrent-sessions2.png         
 └── src/
     ├── main.cpp       # Single-client TCP echo server exercise
     ├── client.cpp     # Interactive TCP echo client exercise
     └── proxy.cpp      # Multi-session Minecraft TCP proxy
 ```
+
+Compiled binaries are intentionally written to `/tmp`, so they are not stored in the repository.
 
 For the broader roadmap and stretch goals, see [the project guide](docs/Minecraft_TCP_Proxy_Project_Guide.md).
 
