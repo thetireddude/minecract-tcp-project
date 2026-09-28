@@ -124,7 +124,7 @@ int main() {
         }
 
         // display message
-        cout << "Received: " << string(buffer, 0, bytesRecv);
+        cout << "Received: " << string(buffer, 0, bytesRecv) << endl;
 
         // forward/send bytes to upstream (server)
         int bytesSent = send(upstreamSocket, buffer, bytesRecv, 0);
@@ -160,7 +160,7 @@ int main() {
         }
 
         // display response
-        cout << "UPSTREAM SERVER: " << string(buffer, 0, upstreamBytesRecv+1);
+        cout << "UPSTREAM SERVER: " << string(buffer, 0, upstreamBytesRecv+1) << endl;
 
         // echo server response back to client
         int bytesSentToClient = send(clientSocket, buffer, upstreamBytesRecv, 0);
