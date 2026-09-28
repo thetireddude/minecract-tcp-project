@@ -183,9 +183,7 @@ int main() {
         cout << "UPSTREAM SERVER: " << string(buffer, 0, upstreamBytesRecv) << endl;
 
         // echo server response back to client
-        int bytesSentToClient = send(clientSocket, buffer, upstreamBytesRecv, 0);
-
-        if (bytesSentToClient == -1) {
+        if (!sendAll(clientSocket, buffer, upstreamBytesRecv)) {
             cerr << "Couldnt echo response back to client" << endl;
             close(listening);
             close(clientSocket);
@@ -193,7 +191,7 @@ int main() {
             return -12;
         }
         else {
-            cout << "Echoed " << bytesSentToClient << " bytes back to client" << endl;
+            cout << "Echoed " << upstreamBytesRecv << " bytes back to client" << endl;
         }
         
     }
