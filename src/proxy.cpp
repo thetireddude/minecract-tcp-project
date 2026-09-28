@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <thread>
+#include <atomic>
 
 using namespace std;
 
@@ -19,6 +20,7 @@ using namespace std;
 int listenerPort = 25566;
 int upstreamPort = 25565;
 const char* upstreamIp = "127.0.0.1";
+atomic<int> activeSessions{0};  // counter; atomic int is thread-safe
 
 // keeps calling send() until all bytes are sent
 bool sendAll(int destinationSocket, const char* data, int length) { 
@@ -124,9 +126,17 @@ void handleClientSession(int clientSocket, int upstream_port, const char* upstre
         cout << "Connected to upstream on port " << upstream_port << endl;
     }
 
+    // log number of sessions; increment
+    int currentSessions = ++activeSessions; // local variable in case activeSessions increments before we can log
+    cout << "Session started. Active sessions: " << currentSessions << endl;
+
     // create a relay session for the client
     // still only accepts one client connection since there is no loop
     relaySession(clientSocket, upstreamSocket);
+
+    // log number of sessions; decrement
+    currentSessions = --activeSessions; // local variable in case activeSessions decrements before we can log
+    cout << "Session ended. Active sessions: " << currentSessions << endl;
 }
 
 int main() {
