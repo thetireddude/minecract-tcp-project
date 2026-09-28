@@ -162,40 +162,46 @@ int main() {
         cout << "Listening for connections..." << endl;
     }
 
-    // create client socket (minecraft player)
-    sockaddr_in client; 
-    socklen_t clientSize = sizeof(client);
+    while(true) {   // infinite loop; listener keeps accepting client connections
+        // create client socket (minecraft player)
+        sockaddr_in client; 
+        socklen_t clientSize = sizeof(client);
 
-    // listener accept/establish connection with client
-    int clientSocket = accept(listening, (sockaddr*)&client, &clientSize); 
+        // listener accept/establish connection with client
+        int clientSocket = accept(listening, (sockaddr*)&client, &clientSize);
 
-    if (clientSocket == -1) {
-        cerr << "Listener couldnt connect with client socket";
-        close(listening);
-        return -4;
+        if (clientSocket == -1) {
+            cerr << "Listener couldnt accept/connect client socket";
+            continue;
+        }
+
+        // display host info 
+        char host[NI_MAXHOST];  // buffer
+        char svc[NI_MAXSERV];  
+        memset(host, 0, NI_MAXHOST);    // cleaning buffers
+        memset(svc, 0, NI_MAXSERV);
+
+        int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0); // getting the name of the host
+
+        if (result == 0) {  // getnameinfo() returns 0 on success
+            cout <<  host << " connected on " << svc << endl;
+        }
+        else {
+            // do it manually if it fails
+            inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
+            cout << host << " connected on " << ntohs(client.sin_port) << endl;
+        }
+
+        // set up and handle upstream socket connection per-client; in a thread
+        thread sessionThread(handleClientSession,
+            clientSocket,
+            upstreamPort, 
+            upstreamIp
+        );
+
+        sessionThread.detach(); // do not wait for thread to finish; run asynchronously
     }
-
-    // display host info 
-    char host[NI_MAXHOST];  // buffer
-    char svc[NI_MAXSERV];  
-    memset(host, 0, NI_MAXHOST);    // cleaning buffers
-    memset(svc, 0, NI_MAXSERV);
-
-    int result = getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, svc, NI_MAXSERV, 0); // getting the name of the host
-
-    if (result == 0) {  // getnameinfo() returns 0 on success
-        cout <<  host << " connected on " << svc << endl;
-    }
-    else {
-        // do it manually if it fails
-        inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
-        cout << host << " connected on " << ntohs(client.sin_port) << endl;
-    }
-
-    // set-up and handle upstream socket connection
-    handleClientSession(clientSocket, upstreamPort, upstreamIp);
 
     // cleanup
     close(listening);
-
 }
